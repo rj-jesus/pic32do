@@ -1,0 +1,76 @@
+#!/bin/bash
+
+
+# Automate the process of compiling and loading DETPIC32
+#
+# ===========================================================================
+#
+# - The process automated is as follows
+# $ pcompile progX.(c|s)
+# $ sudo ldpic32 -w progX.hex
+# $ sudo pterm
+#
+# - In case progX requires other files, they are also included
+#
+# Ricardo Jesus <rj (dot) bcjesus (at) gmail (dot) com>
+#
+# ===========================================================================
+
+
+PIC32="/opt/pic32mx/bin/"
+PCOMPILE="$PIC32""pcompile"
+LDPIC32="$PIC32""ldpic32 -w"
+PTERM="$PIC32""pterm"
+
+# Check if only a single argument was given. If not, do nothing
+if [ "$#" -ne 1 ]; then
+    >&2 echo "$0"": One and only one arg (name of file to compile) expected."
+    exit 1
+fi
+
+# Split the given file's name at '.'
+NAME=(${1//./ })
+
+# NAME should look like "*.(c|s)"
+if [ ${#NAME[@]} -lt 2 ]; then
+    >&2 echo "$0"": Not a valid file name. Valid names should match *.(c|s)"
+    exit 2
+fi
+
+# Get the file's extension
+EXTENSION="${NAME[-1]}"
+unset NAME[${#NAME[@]}-1]
+
+# EXTENSION is neither 'c' nor 's'
+if [[ "$EXTENSION" != "c" && "$EXTENSION" != "s" ]]; then
+    >&2 echo "$0"": Not a valid file name. Valid names should match *.(c|s)"
+    exit 2
+fi
+
+# Join the rest of the file's name back together
+IFS=. eval 'NAME="${NAME[*]}"'
+
+# Get all other files with the same extension as the argument's
+OTHERS=$(ls *."$EXTENSION" | grep -v "$NAME"."$EXTENSION"  | tr '\n' ' ')
+
+printf "\n***** Compiling *****\n\n"
+$PCOMPILE "$NAME"."$EXTENSION" "$OTHERS"
+printf "\n******* Done ********\n"
+
+# If not root, only compilation works
+if [ "`id -u`" -ne "0" ]; then
+    >&2 echo -e "\nUser doesn't have root privileges (needed to continue)."
+    >&2 echo "If you want to load DETPIC32, run this script as root."
+    exit 3
+fi
+
+# Make all output files as owned by the user
+OTHERS=$(echo "${OTHERS[*]}" | sed "s/\.$EXTENSION/.o/g")
+chown `who am i | awk '{print $1}'`: "$NAME".* $OTHERS
+
+printf "\n***** Loading DETPIC32 *****\n\n"
+$LDPIC32 -w "$NAME".hex
+printf "\n*********** Done ***********\n"
+
+printf "Opening 'pterm' (Ctrl-c to exit)"
+$PTERM
