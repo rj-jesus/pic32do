@@ -69,7 +69,7 @@ OTHERS=$(echo "${OTHERS[*]}" | sed "s/\.$EXTENSION/.o/g")
 chown `who am i | awk '{print $1}'`: "$NAME".* $OTHERS
 
 printf "\n***** Loading DETPIC32 *****\n\n"
-$LDPIC32 -w "$NAME".hex
+$LDPIC32 "$NAME".hex
 printf "\n*********** Done ***********\n"
 
 printf "Opening 'pterm' (Ctrl-c to exit)"
