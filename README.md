@@ -1,5 +1,4 @@
 # PIC32DO
->Automate the process of compiling and loading DETPIC32
 
 ---
 The process automated is as follows
@@ -9,6 +8,7 @@ $ pcompile progX.(c|s)
 $ sudo ldpic32 -w progX.hex
 $ sudo pterm
 ```
+
 * In case progX requires other files, they are also included
 
 ---
