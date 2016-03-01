@@ -1,6 +1,5 @@
 #!/bin/bash
-
-
+#
 # Automate the process of compiling and loading DETPIC32
 #
 # ===========================================================================
@@ -16,11 +15,50 @@
 #
 # ===========================================================================
 
+# Change this to "yes" if you want all files to be compiled by default.
+# Only makes sense with .s files
+COMPILEALL=${COMPILEALL:-"no"}
 
+# Paths to executables
 PIC32="/opt/pic32mx/bin/"
 PCOMPILE="$PIC32""pcompile"
 LDPIC32="$PIC32""ldpic32 -w"
 PTERM="$PIC32""pterm"
+
+while getopts "hau" Option
+do
+    case $Option in
+        h ) echo "Usage:"
+            echo "  $0 [OPTIONS...] ARG"
+            echo ""
+            echo "The script's switches are:"
+            echo "  -h          This help."
+            echo "  -a          Compile all files in the current directory "
+            echo "                  matching the extension of the argument."
+            echo "  -u          Update this script."
+            exit
+            ;;
+        a ) COMPILEALL="yes"
+            ;;
+        u ) echo -n "Updating... "
+            wget -qO "$0".tmp https://raw.githubusercontent.com/RJ-Jesus/pic32do/master/pic32do && chmod +x "$0".tmp
+            echo "Done."
+            "$0".tmp "${@:2}"
+            mv "$0".tmp "$0" && exit
+            ;;
+        * ) echo "You passed an illegal switch to the program!"
+            echo "Run '$0 -h' for more help."
+            exit
+            ;;
+    esac
+done
+
+# End of option parsing.
+shift $(($OPTIND - 1))
+
+#  $1 now references the first non option item supplied on the command line
+#  if one exists.
+# ---------------------------------------------------------------------------
 
 # Check if only a single argument was given. If not, do nothing
 if [ "$#" -ne 1 ]; then
@@ -41,7 +79,7 @@ fi
 EXTENSION="${NAME[-1]}"
 unset NAME[${#NAME[@]}-1]
 
-# EXTENSION is neither 'c' nor 's'
+# Assert EXTENSION is either 'c' or 's'
 if [[ "$EXTENSION" != "c" && "$EXTENSION" != "s" ]]; then
     >&2 echo "$0"": Not a valid file name. Valid names should match *.(c|s)"
     exit 2
@@ -50,8 +88,8 @@ fi
 # Join the rest of the file's name back together
 IFS=. eval 'NAME="${NAME[*]}"'
 
-# Get all other files if argument is an assembly file
-if [ "$EXTENSION" = "s" ]; then
+# Get all other files if 'argument' is an assembly file
+if [[ "$COMPILEALL" = "yes" && "$EXTENSION" = "s" ]]; then
     OTHERS=$(ls *."$EXTENSION" | grep -v "$NAME"."$EXTENSION"  | tr '\n' ' ')
 fi
 
@@ -59,7 +97,7 @@ printf "\n+++++ Compiling +++++\n\n"
 $PCOMPILE "$NAME"."$EXTENSION" "$OTHERS"
 
 if [ $? -ne 0 ]; then
-    >&2 echo "+++ pcompile error. Stopping..."
+    >&2 echo "+++ pcompile error. Stopping."
     exit
 fi
 printf "\n+++++++ Done ++++++++\n"
