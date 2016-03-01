@@ -50,12 +50,19 @@ fi
 # Join the rest of the file's name back together
 IFS=. eval 'NAME="${NAME[*]}"'
 
-# Get all other files with the same extension as the argument's
-OTHERS=$(ls *."$EXTENSION" | grep -v "$NAME"."$EXTENSION"  | tr '\n' ' ')
+# Get all other files if argument is an assembly file
+if [ "$EXTENSION" = "s" ]; then
+    OTHERS=$(ls *."$EXTENSION" | grep -v "$NAME"."$EXTENSION"  | tr '\n' ' ')
+fi
 
-printf "\n***** Compiling *****\n\n"
+printf "\n+++++ Compiling +++++\n\n"
 $PCOMPILE "$NAME"."$EXTENSION" "$OTHERS"
-printf "\n******* Done ********\n"
+
+if [ $? -ne 0 ]; then
+    >&2 echo "+++ pcompile error. Stopping..."
+    exit
+fi
+printf "\n+++++++ Done ++++++++\n"
 
 # If not root, only compilation works
 if [ "`id -u`" -ne "0" ]; then
@@ -68,9 +75,14 @@ fi
 OTHERS=$(echo "${OTHERS[*]}" | sed "s/\.$EXTENSION/.o/g")
 chown `who am i | awk '{print $1}'`: "$NAME".* $OTHERS
 
-printf "\n***** Loading DETPIC32 *****\n\n"
+printf "\n+++++ Loading DETPIC32 +++++\n\n"
 $LDPIC32 "$NAME".hex
-printf "\n*********** Done ***********\n"
 
-printf "Opening 'pterm' (Ctrl-c to exit)"
+if [ $? -ne 0 ]; then
+    >&2 echo "+++ ldpic32 error. Stopping..."
+    exit
+fi
+printf "\n+++++++++++ Done +++++++++++\n"
+
+printf "\nOpening 'pterm' (Ctrl-c to exit)\n"
 $PTERM
