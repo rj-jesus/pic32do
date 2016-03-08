@@ -25,7 +25,7 @@ PCOMPILE="$PIC32""pcompile"
 LDPIC32="$PIC32""ldpic32 -w"
 PTERM="$PIC32""pterm"
 
-while getopts "hau" Option
+while getopts "hauc" Option
 do
     case $Option in
         h ) echo "Usage:"
@@ -36,6 +36,8 @@ do
             echo "  -a          Compile all files in the current directory "
             echo "                  matching the extension of the argument."
             echo "  -u          Update this script."
+            echo "  -c          Clean the working directory of extraneous"
+            echo "                  files."
             exit
             ;;
         a ) COMPILEALL="yes"
@@ -45,6 +47,13 @@ do
             echo "Done."
             "$0".tmp "${@:2}"
             mv "$0".tmp "$0" && exit
+            ;;
+        c)  echo -n "Cleaning... "
+            rm -f *.elf
+            rm -f *.map
+            rm -f *.hex
+            rm -f *.o
+            exit
             ;;
         * ) echo "You passed an illegal switch to the program!"
             echo "Run '$0 -h' for more help."
