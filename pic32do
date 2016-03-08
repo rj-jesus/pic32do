@@ -19,13 +19,18 @@
 # Only makes sense with .s files
 COMPILEALL=${COMPILEALL:-"no"}
 
+# Keep this as "yes" if you want to keep a clean working space
+CLEANAFTER=${CLEANAFTER:-"yes"}
+
 # Paths to executables
 PIC32="/opt/pic32mx/bin/"
 PCOMPILE="$PIC32""pcompile"
 LDPIC32="$PIC32""ldpic32 -w"
 PTERM="$PIC32""pterm"
+# Regexes to clean
+CLEANEXT="*.elf *.map *.hex *.o"
 
-while getopts "hauc" Option
+while getopts "hcau" Option
 do
     case $Option in
         h ) echo "Usage:"
@@ -35,9 +40,14 @@ do
             echo "  -h          This help."
             echo "  -a          Compile all files in the current directory "
             echo "                  matching the extension of the argument."
-            echo "  -u          Update this script."
             echo "  -c          Clean the working directory of extraneous"
             echo "                  files."
+            echo "  -u          Update this script."
+            exit
+            ;;
+        c)  echo -n "Cleaning... "
+            rm -f "$CLEANEXT"
+            echo "Done."
             exit
             ;;
         a ) COMPILEALL="yes"
@@ -47,13 +57,6 @@ do
             echo "Done."
             "$0".tmp "${@:2}"
             mv "$0".tmp "$0" && exit
-            ;;
-        c)  echo -n "Cleaning... "
-            rm -f *.elf
-            rm -f *.map
-            rm -f *.hex
-            rm -f *.o
-            exit
             ;;
         * ) echo "You passed an illegal switch to the program!"
             echo "Run '$0 -h' for more help."
@@ -131,5 +134,11 @@ if [ $? -ne 0 ]; then
 fi
 printf "\n+++++++++++ Done +++++++++++\n"
 
-printf "\nOpening 'pterm' (Ctrl-c to exit)\n"
+printf "\n+++ Opening 'pterm' (Ctrl-c to exit)\n\n"
 $PTERM
+
+if [ "$CLEANAFTER" == "yes" ]; then
+    echo -ne "\n+++ Cleaning... "
+    rm -f "$CLEANEXT"
+    echo "Done."
+fi
