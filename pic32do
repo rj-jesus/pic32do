@@ -46,7 +46,7 @@ do
             exit
             ;;
         c)  echo -n "Cleaning... "
-            rm -f "$CLEANEXT"
+            rm -f $CLEANEXT
             echo "Done."
             exit
             ;;
@@ -137,8 +137,8 @@ printf "\n+++++++++++ Done +++++++++++\n"
 printf "\n+++ Opening 'pterm' (Ctrl-c to exit)\n\n"
 $PTERM
 
-if [ "$CLEANAFTER" == "yes" ]; then
+if [ "$CLEANAFTER" = "yes" ]; then
     echo -ne "\n+++ Cleaning... "
-    rm -f "$CLEANEXT"
+    rm -f $CLEANEXT
     echo "Done."
 fi
